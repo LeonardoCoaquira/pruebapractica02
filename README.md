@@ -209,7 +209,7 @@ urlpatterns = [
     path('producto', views.producto, name="producto")
 ]
 ```
-Add (or modify) in the project's settings.py file:
+Add (or modify) in the project's urls.py file:
 ```python
 from django.urls import path,include
 
