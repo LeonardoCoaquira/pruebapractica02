@@ -21,6 +21,8 @@
             - [Layout](#layout)
             - [Producto](#producto)
             - [Categoria](#categoria)
+    - [API](#api)
+        - [Setup](#setup-api)
 
 ## Development Setup
 
@@ -436,4 +438,92 @@ def categoria(request, categoria_id):
     }
     
     return render(request,'index.html',context)
+```
+
+## API
+In this section we are going to use djangoRESTframework to provide an api for querying products and categories.
+
+### Setup API
+Go to the api folder and create the serializers.py file:
+```python
+from rest_framework import serializers
+
+from tienda.models import Categoria,Producto
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = '__all__'
+        
+class ProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = '__all__'
+```
+
+### Views
+Modify in views.py in API folder:
+```python
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import generics
+from rest_framework import viewsets
+
+from tienda.models import Categoria,Producto
+from .serializers import (
+    CategoriaSerializer,
+    ProductoSerializer
+)
+
+class IndexView(APIView):
+    
+    def get(self,request):
+        lista_categorias = Categoria.objects.all()
+        serializer_categoria = CategoriaSerializer(lista_categorias,many=True)
+        return Response(serializer_categoria.data)
+    
+class CategoriaView(generics.ListCreateAPIView):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+    
+class CategoriaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Categoria.objects.all()
+    lookup_url_kwarg  = 'categoria_id'
+    serializer_class = CategoriaSerializer
+    
+class ProductoViewSet(viewsets.ModelViewSet):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
+```
+
+### Urls
+Add or modify in urls.py in API folder:
+```python
+from django.urls import path,include
+from rest_framework.routers import DefaultRouter
+
+from . import views
+
+router = DefaultRouter()
+
+router.register(r'producto',views.ProductoViewSet,basename='producto')
+
+urlpatterns = [
+    path('',views.IndexView.as_view()),
+    path('categoria',views.CategoriaView.as_view()),
+    path('categoria/<int:categoria_id>',views.CategoriaDetailView.as_view()),
+    path('admin/',include(router.urls))
+]
+```
+
+Also add or modify in urls.py in project folder:
+```python
+from django.contrib import admin
+from django.urls import path,include
+
+urlpatterns = [
+    path('',include('tienda.urls')),
+    path('api/',include('api.urls')),
+    path('admin/', admin.site.urls),
+]
 ```
